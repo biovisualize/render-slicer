@@ -1,4 +1,4 @@
-var renderQueue = (function (func) {
+var renderSlicer = (function (func) {
 	var _queue = [], // data to be rendered
 		_rate = 1000, // number of calls per frame
 		_invalidate = function () {}, // invalidate last render queue

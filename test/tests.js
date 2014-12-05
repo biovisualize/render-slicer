@@ -1,6 +1,6 @@
 var expect = chai.expect;
 
-describe('Render-queue', function() {
+describe('Render-slicer', function() {
 
 	function range(n){
 		return Array.apply(null, Array(n)).map(function(d, i){ return i; });
@@ -17,13 +17,13 @@ describe('Render-queue', function() {
 	});
 
 	it('properly wraps a function', function() {
-		var queuedFunc = renderQueue(function(){ });
+		var queuedFunc = renderSlicer(function(){ });
 		queuedFunc(data);
 	});
 
 	it('calls the function for every data point', function(done) {
 		var count = 0;
-		var queuedFunc = renderQueue(function(){
+		var queuedFunc = renderSlicer(function(){
 			count++;
 			if(count === data.length){
 				expect(count).to.equal(40);
@@ -35,7 +35,7 @@ describe('Render-queue', function() {
 
 	it('passes the data point to the wrapped function', function(done) {
 		var count = 0;
-		var queuedFunc = renderQueue(function(d){
+		var queuedFunc = renderSlicer(function(d){
 			expect(d).to.equal(count);
 			count++;
 			if(count === data.length) done();
@@ -43,10 +43,10 @@ describe('Render-queue', function() {
 		queuedFunc(data);
 	});
 
-	it('can pass an object as data point', function(done) {
+	it('can pass an array of objects as data point', function(done) {
 		var dataObject = [{key: 'a', value: 0}, {key: 'b', value: 1}]
 		var count = 0;
-		var queuedFunc = renderQueue(function(d){
+		var queuedFunc = renderSlicer(function(d){
 			expect(d.value).to.equal(count);
 			count++;
 			if(count === dataObject.length) done();
@@ -55,7 +55,7 @@ describe('Render-queue', function() {
 	});
 
 	it('calls onDone() when finished', function(done) {
-		var queuedFunc = renderQueue(function(){ })
+		var queuedFunc = renderSlicer(function(){ })
 			.onDone(function(){
 				expect(queuedFunc.remaining()).to.equal(0);
 				done();
@@ -64,7 +64,7 @@ describe('Render-queue', function() {
 	});
 
 	it('calls onChunkDone() when a chunk is finished', function(done) {
-		var queuedFunc = renderQueue(function(){ })
+		var queuedFunc = renderSlicer(function(){ })
 			.onChunkDone(function(d){
 				expect(queuedFunc.remaining()).to.equal(0);
 				done();
@@ -75,14 +75,14 @@ describe('Render-queue', function() {
 	it('uses a default chunk size of 1000', function(done) {
 		var data = range(1000);
 		var count = 0;
-		var queuedFunc = renderQueue(function(){ })
+		var queuedFunc = renderSlicer(function(){ })
 			.onChunkDone(function(d){
 				count++;
 				expect(count).to.equal(1);
 			});
 		queuedFunc(data);
 
-		queuedFunc = renderQueue(function(){ })
+		queuedFunc = renderSlicer(function(){ })
 			.onChunkDone(function(d){
 				count++;
 				if(count === 2) done();
@@ -93,7 +93,7 @@ describe('Render-queue', function() {
 
 	it('sets the chunk size, number of data entries to be rendered each frame', function(done) {
 		var count = 0;
-		var queuedFunc = renderQueue(function(){ })
+		var queuedFunc = renderSlicer(function(){ })
 			.rate(2)
 			.onChunkDone(function(d){
 				count++;
@@ -103,7 +103,7 @@ describe('Render-queue', function() {
 	});
 
 	it('gets the chunk size', function() {
-		var queuedFunc = renderQueue(function(){ })
+		var queuedFunc = renderSlicer(function(){ })
 			.rate(2);
 		expect(queuedFunc.rate()).to.equal(2);
 	});
@@ -111,7 +111,7 @@ describe('Render-queue', function() {
 	it('can use remaining() to calculate progress percentage', function(done) {
 		var count = 0;
 		var expectedProgress = [25, 50, 75, 100];
-		var queuedFunc = renderQueue(function(){ })
+		var queuedFunc = renderSlicer(function(){ })
 			.rate(10)
 			.onChunkDone(function(d){
 				var percentageRemaining = 100 - (queuedFunc.remaining() / data.length) * 100;
@@ -123,9 +123,10 @@ describe('Render-queue', function() {
 	});
 
 	it('can use count() to calculate progress percentage', function(done) {
-		var queuedFunc = renderQueue(function(){ })
+		var queuedFunc = renderSlicer(function(){ })
 			.rate(10)
 			.onFrameDone(function(){
+			console.log(queuedFunc.count(), queuedFunc.remaining());
 				var progress = queuedFunc.count() / data.length * 100;
 				if(progress === 100){
 					done();
@@ -136,7 +137,7 @@ describe('Render-queue', function() {
 
 	it('stops and replaces the current queue when called with new data', function(done) {
 		var count = 0;
-		var queuedFunc = renderQueue(function(){ })
+		var queuedFunc = renderSlicer(function(){ })
 			.rate(10)
 			.onChunkDone(function(){
 				count++;
@@ -151,7 +152,7 @@ describe('Render-queue', function() {
 
 	it('stops the current queue using invalidate()', function(done) {
 		var count = 0;
-		var queuedFunc = renderQueue(function(){ })
+		var queuedFunc = renderSlicer(function(){ })
 			.rate(10)
 			.onChunkDone(function(){
 				count++;
@@ -166,7 +167,7 @@ describe('Render-queue', function() {
 
 	it('calls onStart() before the first render', function(done) {
 		var isStarted = false;
-		var queuedFunc = renderQueue(function(){ })
+		var queuedFunc = renderSlicer(function(){ })
 			.onStart(function(){
 				isStarted = true;
 			})
@@ -179,7 +180,7 @@ describe('Render-queue', function() {
 
 	it('adds new data and continue rendering', function(done) {
 		var count = 0;
-		var queuedFunc = renderQueue(function(){ })
+		var queuedFunc = renderSlicer(function(){ })
 			.onFrameDone(function(){
 				count++;
 				if(count > 40) done();
